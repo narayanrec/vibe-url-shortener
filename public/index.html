@@ -15,6 +15,8 @@
     .brand-mark { display:grid; place-items:center; width:34px; height:34px; border-radius:11px; color:white; background:var(--green); }
     .brand-mark svg { width:19px; height:19px }
     .badge { color:#4d6257; font-size:12px; font-weight:650; border:1px solid var(--line); padding:8px 12px; border-radius:99px; background:#fff; }
+    .nav-link { color:var(--green); font-size:13px; font-weight:700; text-decoration:none; }
+    .nav-link:hover { text-decoration:underline; }
     main { display:grid; grid-template-columns:1.08fr .92fr; align-items:center; gap:68px; max-width:980px; margin:100px auto 0; }
     .eyebrow { display:inline-flex; align-items:center; gap:8px; color:var(--green); font-size:12px; font-weight:750; letter-spacing:1.15px; text-transform:uppercase; }
     .eyebrow:before { content:""; width:7px; height:7px; border-radius:50%; background:#80ad52; }
@@ -57,7 +59,7 @@
   <div class="shell">
     <header>
       <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3A5 5 0 0 0 13 2.93l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3A5 5 0 0 0 11 21.07l1.72-1.71"/></svg></span>linklet</div>
-      <span class="badge">Free · no account needed</span>
+      <a class="nav-link" href="/links.html">Your links&nbsp; →</a>
     </header>
     <main>
       <section aria-labelledby="headline">
