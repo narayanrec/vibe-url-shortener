@@ -1,0 +1,12 @@
+{
+  "name": "linklet-url-shortener",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A tiny dependency-free URL shortener built with Node.js.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
