@@ -73,6 +73,10 @@
       shortAnchor.textContent = link.shortUrl;
       shortField.append(shortLabel, shortAnchor);
 
+      const expiry = document.createElement('span');
+      expiry.className = 'field-label';
+      expiry.textContent = `Expires ${new Date(link.expiresAt).toLocaleDateString()}`;
+
       const originalField = document.createElement('div');
       originalField.className = 'field original';
       const originalLabel = document.createElement('span');
@@ -99,7 +103,7 @@
         }
         window.setTimeout(() => { copy.textContent = 'Copy'; }, 1600);
       });
-      entry.append(shortField, originalField, copy);
+      entry.append(shortField, expiry, originalField, copy);
       return entry;
     }
 

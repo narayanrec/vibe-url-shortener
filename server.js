@@ -57,7 +57,7 @@ const server = http.createServer(async (request, response) => {
         return sendJson(response, 500, { error: 'The link couldn’t be saved. Please try again.' });
       }
       const shortUrl = `${url.origin}/${entry.code}`;
-      return sendJson(response, entry.created ? 201 : 200, { shortUrl, originalUrl: normalizedUrl });
+      return sendJson(response, entry.created ? 201 : 200, { shortUrl, originalUrl: normalizedUrl, expiresAt: entry.expiresAt });
     } catch (error) {
       return sendJson(response, error.status || 400, { error: error.message || 'Something went wrong.' });
     }
@@ -65,14 +65,14 @@ const server = http.createServer(async (request, response) => {
 
   if (url.pathname === '/api/links' && request.method === 'GET') {
     const storedLinks = await storage.list();
-    const items = storedLinks.map(({ code, url: originalUrl }) => ({ shortUrl: `${url.origin}/${code}`, originalUrl }));
+    const items = storedLinks.map(({ code, url: originalUrl, expiresAt }) => ({ shortUrl: `${url.origin}/${code}`, originalUrl, expiresAt }));
     return sendJson(response, 200, { links: items });
   }
 
   if (request.method === 'GET' && CODE_PATTERN.test(url.pathname.slice(1))) {
     const destination = await storage.findByCode(url.pathname.slice(1));
     if (destination) {
-      response.writeHead(302, { Location: destination, 'Cache-Control': 'no-store' });
+      response.writeHead(302, { Location: destination.url, 'Cache-Control': 'no-store' });
       return response.end();
     }
     response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
