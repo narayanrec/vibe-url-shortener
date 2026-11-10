@@ -2,19 +2,13 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { randomInt } = require('node:crypto');
+const { createStorage } = require('./storage');
 
 const PORT = Number(process.env.PORT) || 3000;
-const DATA_FILE = path.join(__dirname, 'links.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const CODE_PATTERN = /^[a-zA-Z0-9]{8}$/;
 const CODE_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-let links = {};
-try {
-  links = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-} catch (error) {
-  if (error.code !== 'ENOENT') console.error('Could not load saved links:', error.message);
-}
+const storage = createStorage();
 
 function sendJson(response, status, body) {
   response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -40,17 +34,7 @@ function readJson(request) {
 }
 
 function createCode() {
-  let code;
-  do {
-    code = Array.from({ length: 8 }, () => CODE_CHARACTERS[randomInt(CODE_CHARACTERS.length)]).join('');
-  } while (links[code]);
-  return code;
-}
-
-function saveLinks() {
-  const tempFile = `${DATA_FILE}.tmp`;
-  fs.writeFileSync(tempFile, JSON.stringify(links, null, 2));
-  fs.renameSync(tempFile, DATA_FILE);
+  return Array.from({ length: 8 }, () => CODE_CHARACTERS[randomInt(CODE_CHARACTERS.length)]).join('');
 }
 
 const server = http.createServer(async (request, response) => {
@@ -70,37 +54,28 @@ const server = http.createServer(async (request, response) => {
       }
 
       const normalizedUrl = destination.toString();
-      const existing = Object.entries(links).find(([, savedUrl]) => savedUrl === normalizedUrl);
-      if (existing) {
-        const shortUrl = `${url.origin}/${existing[0]}`;
-        return sendJson(response, 200, { shortUrl, originalUrl: normalizedUrl });
-      }
-
-      const code = createCode();
-      links[code] = normalizedUrl;
-      try { saveLinks(); }
-      catch (error) {
-        delete links[code];
+      let entry;
+      try {
+        entry = await storage.createOrGet(normalizedUrl, createCode);
+      } catch (error) {
         console.error('Could not save short link:', error.message);
         return sendJson(response, 500, { error: 'The link couldn’t be saved. Please try again.' });
       }
-      const shortUrl = `${url.origin}/${code}`;
-      return sendJson(response, 201, { shortUrl, originalUrl: normalizedUrl });
+      const shortUrl = `${url.origin}/${entry.code}`;
+      return sendJson(response, entry.created ? 201 : 200, { shortUrl, originalUrl: normalizedUrl });
     } catch (error) {
       return sendJson(response, error.status || 400, { error: error.message || 'Something went wrong.' });
     }
   }
 
   if (url.pathname === '/api/links' && request.method === 'GET') {
-    const items = Object.entries(links).map(([code, originalUrl]) => ({
-      shortUrl: `${url.origin}/${code}`,
-      originalUrl
-    }));
+    const storedLinks = await storage.list();
+    const items = storedLinks.map(({ code, url: originalUrl }) => ({ shortUrl: `${url.origin}/${code}`, originalUrl }));
     return sendJson(response, 200, { links: items });
   }
 
   if (request.method === 'GET' && CODE_PATTERN.test(url.pathname.slice(1))) {
-    const destination = links[url.pathname.slice(1)];
+    const destination = await storage.findByCode(url.pathname.slice(1));
     if (destination) {
       response.writeHead(302, { Location: destination, 'Cache-Control': 'no-store' });
       return response.end();
