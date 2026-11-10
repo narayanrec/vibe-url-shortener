@@ -4,7 +4,8 @@
   "private": true,
   "description": "A tiny dependency-free URL shortener built with Node.js.",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test"
   },
   "engines": {
     "node": ">=18"

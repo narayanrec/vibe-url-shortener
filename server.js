@@ -1,13 +1,12 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
-const { randomInt } = require('node:crypto');
 const { createStorage } = require('./storage');
+const { generateSlug } = require('./slug');
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const CODE_PATTERN = /^[a-zA-Z0-9]{8}$/;
-const CODE_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 const storage = createStorage();
 
 function sendJson(response, status, body) {
@@ -33,10 +32,6 @@ function readJson(request) {
   });
 }
 
-function createCode() {
-  return Array.from({ length: 8 }, () => CODE_CHARACTERS[randomInt(CODE_CHARACTERS.length)]).join('');
-}
-
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
 
@@ -56,7 +51,7 @@ const server = http.createServer(async (request, response) => {
       const normalizedUrl = destination.toString();
       let entry;
       try {
-        entry = await storage.createOrGet(normalizedUrl, createCode);
+        entry = await storage.createOrGet(normalizedUrl, generateSlug);
       } catch (error) {
         console.error('Could not save short link:', error.message);
         return sendJson(response, 500, { error: 'The link couldn’t be saved. Please try again.' });
